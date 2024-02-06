@@ -9,17 +9,29 @@ public class HomeController : Controller
         new Product { Id = 1, Name = "Product 1", Price = 100.49 },
         new Product { Id = 2, Name = "Product 2", Price = 130.49 }
     };
-
+    private static List<Order> orders = new List<Order>();
     /// <summary>
     /// GET запрос, возвращает список товаров
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    [Route("api/Get")]
+    [Route("api/GetProducts")]
     public IActionResult GetProducts()
     {
         return Json(products);
     }
+
+    /// <summary>
+    /// GET запрос, возвращает список заказов
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("api/GetOrder")]
+    public IActionResult GetOrder()
+    {
+        return Json(orders);
+    }
+
 
     /// <summary>
     /// POST запрос с указанием значений в body
@@ -65,6 +77,60 @@ public class HomeController : Controller
         {
             products.Remove(productToRemove);
             return Json(products);
+        }
+        return NotFound();
+    }
+
+    /// <summary>
+    /// POST запрос с указанием значений в body
+    /// </summary>
+    /// <param name = "order"></param>
+    /// пример:
+    /// {
+    ///     "ProductIds": [1, 2]
+    /// }
+    ///
+    /// <returns></returns>
+    [HttpPost]
+    [Route("api/CreateOrder")]
+    public IActionResult CreateOrder([FromBody] OrderRequest orderRequest)
+    {
+        if (orderRequest != null && orderRequest.ProductIds != null && orderRequest.ProductIds.Any())
+        {
+            var order = new Order
+            {
+                Id = orders.Count + 1,
+                ProductIds = orderRequest.ProductIds,
+                Date = DateTime.Now 
+            };
+            while (orders.Any(s => s.Id == order.Id))
+            {
+                order.Id++;
+            }
+            orders.Add(order);
+            return Json(orders);
+        }
+        return BadRequest("Invalid order data");
+    }
+
+
+
+
+    /// <summary>
+    /// POST запрос для удаления заказа
+    /// </summary>
+    /// <param name="orderId"></param>
+    /// пример: api/DeleteOrder?orderId=4
+    /// <returns></returns>
+    [HttpPost]
+    [Route("api/DeleteOrder")]
+    public IActionResult DeleteOrder(int orderId)
+    {
+        var orderToRemove = orders.Find(o => o.Id == orderId);
+        if (orderToRemove != null)
+        {
+            orders.Remove(orderToRemove);
+            return Json(orders);
         }
         return NotFound();
     }
